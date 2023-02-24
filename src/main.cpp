@@ -8,7 +8,7 @@
 //  programming concepts for the Engineering Club.
 //
 // Revision History:
-// When			    Who			    Description of change
+// When			    Who	    Description of change
 // -----------	-----------	-----------------------
 // 22-FEB-2023	brooks		  Start of program
 //
@@ -28,6 +28,7 @@ unsigned long time10 = millis();			// Non-Blocking timing
 
 uint8_t ledState = LOW;						// State of LED
 
+uint8_t counter = 0;						// Counter
 
 // Begin Code
 // ****************************************************************************
@@ -49,17 +50,32 @@ void loop()
 		timePrev = millis();				// Reset time
 		ledState = !ledState;				// Toggle LED on/off
 		digitalWrite(LED_BUILTIN, ledState);	
+
+		// Turn on all 50 leds
+		for (uint8_t i=0; i<RGB_NUM; i++)
+		{
+			leds[i] = CRGB::Yellow;
+		 	FastLED.setBrightness(28);		
+	 		FastLED.show();			
+		}
 	}
 
-	if ( millis()-time10 >= 6000 )		// Repeats every 6 sec
-	{
-		time10 = millis();				// Reset time
+	// This turns on multiple colors
+	// if ( millis()-time10 >= 100 )			// Repeats every 100ms
+	// {
+	// 	time10 = millis();					// Reset time
 
-		leds[0] = CRGB::Green;
-		leds[1] = CRGB::Blue;
-		leds[2] = CRGB::Yellow;
-		leds[3] = CRGB::Red;
-		FastLED.show();
-	}
+	// 	leds[counter+0] = CRGB::Black;
+	// 	leds[counter+1] = CRGB::Blue;
+	// 	leds[counter+2] = CRGB::Yellow;
+	// 	leds[counter+3] = CRGB::Red;
+	// 	leds[counter+4] = CRGB::Green;		
+	// 	FastLED.setBrightness(28);		
+	// 	FastLED.show();
+
+	// 	counter = counter + 1;
+	// 	if ( counter >= 50 )
+	// 		counter = 0;
+	// }
 
 }
