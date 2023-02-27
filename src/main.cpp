@@ -62,6 +62,8 @@ void setup()
 	expander1.begin();
 	expander2.begin();
 
+	//expander1.digitalWrite();
+
 	// expander1 pin P0, starting at index 0 in led array
 	FastLED.addLeds<WS2811, P0, RGB>(leds, 0, NUM_LEDS_PER_STRIP);
 	// expander1 pin P1, starting at index 42 in led array	
