@@ -81,7 +81,9 @@ void setup()
 	FastLED.addLeds<WS2811, P14, RGB>(leds, NUM_LEDS_PER_STRIP*15, NUM_LEDS_PER_STRIP);
 	FastLED.addLeds<WS2811, P15, RGB>(leds, NUM_LEDS_PER_STRIP*16, NUM_LEDS_PER_STRIP);	
 
-
+	// need to setup direct pin access somehow for each expander
+	// lambda function for correct pin on each expander
+//	FastLED.addLeds<WS2811, P15, RGB>(leds, NUM_LEDS_PER_STRIP*16, NUM_LEDS_PER_STRIP);	
 
 }
 
