@@ -4,8 +4,8 @@
 // Revision		: 1.0
 // Target MCU	: Espressif ESP32 (Doit DevKit Version 1)
 //
-//  Example program for the Engineering Club using io abstraction, 
-//  FastLed library, and LED matrix control.
+//  Program for the Engineering Club using io abstraction, FastLed library,
+//  and LED matrix control.
 //
 // Revision History:
 // When			    Who	    Description of change
