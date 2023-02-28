@@ -4,15 +4,17 @@
 // Revision		: 1.0
 // Target MCU	: Espressif ESP32 (Doit DevKit Version 1)
 //
-//  Example program for the Engineering Club using FastLed library, io 
-//  abstraction, and 
+//  Example program for the Engineering Club using io abstraction, 
+//  FastLed library, and LED matrix control.
 //
 // Revision History:
 // When			    Who	    Description of change
 // -----------	-----------	-----------------------
 // 22-FEB-2023	brooks		  Start of program
 //
+//
 // ****************************************************************************
+
 
 // Include Files
 // ****************************************************************************
@@ -50,11 +52,12 @@ void setup()
 	multiIo.addIoDevice(expander1, 16);		// Add 8575 with 16 pins (100-115)
 	multiIo.addIoDevice(expander2, 16);		// Add 8575 with 16 pins (116-131)
 
-	for(int i=100; i<132; i++)				// Set pin to function as an OUTPUT
+	for(int i=100; i<132; i++)
 	{
-		multiIo.pinMode(i, OUTPUT);
+		multiIo.pinMode(i, OUTPUT);			// Set pin to function as an OUTPUT
 	}
 
+	// Pin abstraction needs line 358 in clockless_rmt_esp32.h commented out
 	// expander1 pin P0 abstracted to pin 100, starting at index 0 in led array
 	FastLED.addLeds<WS2811, 100, RGB>(leds, 0, NUM_LEDS_PER_STRIP);
 	// expander1 pin P1 abstracted to pin 101, starting at index 42 in led array
@@ -91,23 +94,27 @@ void setup()
 // ****************************************************************************
 void loop() 
 {
-	taskManager.runLoop();
+	taskManager.runLoop();					// Required for IoAbstraction
 
 	if ( millis()-timePrev >= 1000 )		// Repeats every 1sec
 	{
-		timePrev = millis();				// Reset timeDelay
+		timePrev = millis();				// Reset time delay
 		ledState = !ledState;				// Toggle LED on/off
 		multiIo.digitalWrite(LED_BUILTIN, ledState);
 	}
 
-	if ( millis()-timeDelay >= 100 )			// Repeats every 100ms
+	if ( millis()-timeDelay >= 50 )			// Repeats every 50ms
 	{
-		timeDelay = millis();					// Reset timeDelay
+		timeDelay = millis();				// Reset time delay
 
-		leds[counter+0] = CRGB::Black;
+		leds[counter] = CRGB::Black;
 		leds[counter+1] = CRGB::Red;
 		FastLED.setBrightness(28);			
 		FastLED.show();
+
+		counter = counter + 1;
+		if ( counter >= (NUM_STRIPS * NUM_LEDS_PER_STRIP) )
+			counter = 0;		
 	}
 
 }
