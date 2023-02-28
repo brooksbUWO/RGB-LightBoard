@@ -50,8 +50,10 @@ void setup()
 	multiIo.pinMode(LED_BUILTIN, OUTPUT);	// Set pin to function as an OUTPUT
 
 	Wire.begin();
-	multiIo.addIoDevice(expander1, 16);		// Add 8575 with 16 pins (100-115)
-	multiIo.addIoDevice(expander2, 16);		// Add 8575 with 16 pins (116-131)
+	multiIo.addIoExpander(&expander1, 16);	// Add 8575 with 16 pins (100-115)
+	multiIo.addIoExpander(&expander2, 16);	// Add 8575 with 16 pins (116-131)	
+	// multiIo.addIoDevice(expander1, 16);		// Add 8575 with 16 pins (100-115)
+	// multiIo.addIoDevice(expander2, 16);		// Add 8575 with 16 pins (116-131)
 
 	for(int i=100; i<132; i++)
 	{
