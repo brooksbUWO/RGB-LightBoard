@@ -18,6 +18,14 @@
 // ****************************************************************************
 #include <Arduino.h>
 
+#include <IoAbstraction.h>
+#include <IoAbstractionWire.h>
+#include <TaskManagerIO.h>
+#include <Wire.h>
+
+MultiIoAbstraction multiIo(100);
+
+
 #include <FastLED.h>
 
 #define NUM_STRIPS 22
@@ -39,9 +47,7 @@ PCF8575 expander2(&I2Ctwo, 0x21);				// Set I2C address for I2C two
 
 unsigned long timePrev = millis();			// Non-Blocking LED heartbeat
 unsigned long time10 = millis();			// Non-Blocking timing
-
 uint8_t ledState = LOW;						// State of LED
-
 uint8_t counter = 0;						// Counter
 
 
