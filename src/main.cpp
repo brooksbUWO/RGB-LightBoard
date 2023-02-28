@@ -44,6 +44,7 @@ uint8_t ledState = LOW;						// State of LED
 
 uint8_t counter = 0;						// Counter
 
+
 // Begin Code
 // ****************************************************************************
 void setup() 
