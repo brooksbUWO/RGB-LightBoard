@@ -32,6 +32,7 @@ uint16_t counter = 0;						// Counter
 CRGB leds[NUM_STRIPS * NUM_LEDS_PER_STRIP];
 
 // https://www.thecoderscorner.com/products/arduino-downloads/io-abstraction/
+// https://www.thecoderscorner.com/products/arduino-libraries/io-abstraction/arduino-pins-and-io-expanders-same-time/
 #include <IoAbstraction.h>
 #include <IoAbstractionWire.h>
 #include <TaskManagerIO.h>
