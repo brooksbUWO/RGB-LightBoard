@@ -4,8 +4,8 @@
 // Revision		: 1.0
 // Target MCU	: Espressif ESP32 (Doit DevKit Version 1)
 //
-//  Example program to show both how to use FastLed library and some basic
-//  programming concepts for the Engineering Club.
+//  Example program for the Engineering Club using FastLed library, io 
+//  abstraction, and 
 //
 // Revision History:
 // When			    Who	    Description of change
@@ -17,82 +17,72 @@
 // Include Files
 // ****************************************************************************
 #include <Arduino.h>
+unsigned long timePrev = millis();			// Non-Blocking LED heartbeat
+unsigned long timeDelay = millis();			// Non-Blocking timing delay
+uint8_t ledState = LOW;						// State of LED
+uint16_t counter = 0;						// Counter
 
+// https://www.thecoderscorner.com/products/arduino-downloads/io-abstraction/
 #include <IoAbstraction.h>
 #include <IoAbstractionWire.h>
 #include <TaskManagerIO.h>
 #include <Wire.h>
+MultiIoAbstraction multiIo(100);			// Allocate 100 pins to arduino pins
+PCF8574IoAbstraction expander1(0x20, IO_PIN_NOT_DEFINED);
+PCF8574IoAbstraction expander2(0x21, IO_PIN_NOT_DEFINED);
 
-MultiIoAbstraction multiIo(100);
-
-
+// https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples#one-array-many-strips
 #include <FastLED.h>
-
 #define NUM_STRIPS 22
 #define NUM_LEDS_PER_STRIP 42
 #define NUM_LEDS NUM_LEDS_PER_STRIP * NUM_STRIPS
 CRGB leds[NUM_STRIPS * NUM_LEDS_PER_STRIP];
-
-#include <PCF8575.h>
-TwoWire I2Cone = TwoWire(0);				// Instantiate Wire for use at 400kHz
-TwoWire I2Ctwo = TwoWire(0);				// Instantiate Wire for use at 400kHz
-
-// PCF8575 address map 0x20-0x27 use A0, A1, A2 to change address
-PCF8575 expander1(&I2Cone, 0x20);				// Set I2C address for I2C one
-PCF8575 expander2(&I2Ctwo, 0x21);				// Set I2C address for I2C two
-
-// #define RGB_NUM 50							// RGB LEDs quantity
-// #define RGB_PIN 4							// RGB data pin
-// CRGB leds[RGB_NUM];							// Declare RGB structure
-
-unsigned long timePrev = millis();			// Non-Blocking LED heartbeat
-unsigned long time10 = millis();			// Non-Blocking timing
-uint8_t ledState = LOW;						// State of LED
-uint8_t counter = 0;						// Counter
 
 
 // Begin Code
 // ****************************************************************************
 void setup() 
 {
-	Serial.begin(115200);					// Serial monitor baud rate 115200				
-	pinMode(LED_BUILTIN, OUTPUT);			// Set pin to function as an output
+	Serial.begin(115200);					// Serial monitor baud rate 115200
+	multiIo.pinMode(LED_BUILTIN, OUTPUT);	// Set pin to function as an OUTPUT
 
-	I2Cone.begin(0x20, 21, 22, 400000);		// Wire begin (address, pins, speed)
-	I2Ctwo.begin(0x21, 21, 22, 400000);		// Wire begin (address, pins, speed)
+	Wire.begin();
+	multiIo.addIoDevice(expander1, 16);		// Add 8575 with 16 pins (100-115)
+	multiIo.addIoDevice(expander2, 16);		// Add 8575 with 16 pins (116-131)
 
-	for(int i=0; i<16; i++)					// Set pinMode to OUTPUT
+	for(int i=100; i<132; i++)				// Set pin to function as an OUTPUT
 	{
-		expander1.pinMode(i, OUTPUT);
-		expander2.pinMode(i, OUTPUT);
+		multiIo.pinMode(i, OUTPUT);
 	}
-	expander1.begin();
-	expander2.begin();
 
-	//expander1.digitalWrite();
+	// expander1 pin P0 abstracted to pin 100, starting at index 0 in led array
+	FastLED.addLeds<WS2811, 100, RGB>(leds, 0, NUM_LEDS_PER_STRIP);
+	// expander1 pin P1 abstracted to pin 101, starting at index 42 in led array
+	FastLED.addLeds<WS2811, 101, RGB>(leds, NUM_LEDS_PER_STRIP*1, NUM_LEDS_PER_STRIP);
+	FastLED.addLeds<WS2811, 102, RGB>(leds, NUM_LEDS_PER_STRIP*2, NUM_LEDS_PER_STRIP);
+	FastLED.addLeds<WS2811, 103, RGB>(leds, NUM_LEDS_PER_STRIP*3, NUM_LEDS_PER_STRIP);
+	FastLED.addLeds<WS2811, 104, RGB>(leds, NUM_LEDS_PER_STRIP*4, NUM_LEDS_PER_STRIP);
+	FastLED.addLeds<WS2811, 105, RGB>(leds, NUM_LEDS_PER_STRIP*5, NUM_LEDS_PER_STRIP);
+	FastLED.addLeds<WS2811, 106, RGB>(leds, NUM_LEDS_PER_STRIP*6, NUM_LEDS_PER_STRIP);
+	FastLED.addLeds<WS2811, 107, RGB>(leds, NUM_LEDS_PER_STRIP*7, NUM_LEDS_PER_STRIP);
+	FastLED.addLeds<WS2811, 108, RGB>(leds, NUM_LEDS_PER_STRIP*8, NUM_LEDS_PER_STRIP);
+	FastLED.addLeds<WS2811, 109, RGB>(leds, NUM_LEDS_PER_STRIP*9, NUM_LEDS_PER_STRIP);
+	FastLED.addLeds<WS2811, 110, RGB>(leds, NUM_LEDS_PER_STRIP*10, NUM_LEDS_PER_STRIP);
+	FastLED.addLeds<WS2811, 111, RGB>(leds, NUM_LEDS_PER_STRIP*11, NUM_LEDS_PER_STRIP);
+	FastLED.addLeds<WS2811, 112, RGB>(leds, NUM_LEDS_PER_STRIP*12, NUM_LEDS_PER_STRIP);
+	FastLED.addLeds<WS2811, 113, RGB>(leds, NUM_LEDS_PER_STRIP*13, NUM_LEDS_PER_STRIP);
+	FastLED.addLeds<WS2811, 114, RGB>(leds, NUM_LEDS_PER_STRIP*14, NUM_LEDS_PER_STRIP);
+	FastLED.addLeds<WS2811, 115, RGB>(leds, NUM_LEDS_PER_STRIP*15, NUM_LEDS_PER_STRIP);	
 
-	// expander1 pin P0, starting at index 0 in led array
-	FastLED.addLeds<WS2811, P0, RGB>(leds, 0, NUM_LEDS_PER_STRIP);
-	// expander1 pin P1, starting at index 42 in led array	
-	FastLED.addLeds<WS2811, P1, RGB>(leds, NUM_LEDS_PER_STRIP*2, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, P2, RGB>(leds, NUM_LEDS_PER_STRIP*3, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, P3, RGB>(leds, NUM_LEDS_PER_STRIP*4, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, P4, RGB>(leds, NUM_LEDS_PER_STRIP*5, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, P5, RGB>(leds, NUM_LEDS_PER_STRIP*6, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, P6, RGB>(leds, NUM_LEDS_PER_STRIP*7, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, P7, RGB>(leds, NUM_LEDS_PER_STRIP*8, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, P8, RGB>(leds, NUM_LEDS_PER_STRIP*9, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, P9, RGB>(leds, NUM_LEDS_PER_STRIP*10, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, P10, RGB>(leds, NUM_LEDS_PER_STRIP*11, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, P11, RGB>(leds, NUM_LEDS_PER_STRIP*12, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, P12, RGB>(leds, NUM_LEDS_PER_STRIP*13, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, P13, RGB>(leds, NUM_LEDS_PER_STRIP*14, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, P14, RGB>(leds, NUM_LEDS_PER_STRIP*15, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, P15, RGB>(leds, NUM_LEDS_PER_STRIP*16, NUM_LEDS_PER_STRIP);	
-
-	// need to setup direct pin access somehow for each expander
-	// lambda function for correct pin on each expander
-//	FastLED.addLeds<WS2811, P15, RGB>(leds, NUM_LEDS_PER_STRIP*16, NUM_LEDS_PER_STRIP);	
+	// expander2 pin P0 abstracted to pin 116, starting at index 714 in led array
+	FastLED.addLeds<WS2811, 116, RGB>(leds, NUM_LEDS_PER_STRIP*16, NUM_LEDS_PER_STRIP);	
+	// expander2 pin P1 abstracted to pin 117, starting at index 756 in led array
+	FastLED.addLeds<WS2811, 117, RGB>(leds, NUM_LEDS_PER_STRIP*17, NUM_LEDS_PER_STRIP);	
+	FastLED.addLeds<WS2811, 118, RGB>(leds, NUM_LEDS_PER_STRIP*18, NUM_LEDS_PER_STRIP);	
+	FastLED.addLeds<WS2811, 119, RGB>(leds, NUM_LEDS_PER_STRIP*19, NUM_LEDS_PER_STRIP);	
+	FastLED.addLeds<WS2811, 120, RGB>(leds, NUM_LEDS_PER_STRIP*20, NUM_LEDS_PER_STRIP);	
+	FastLED.addLeds<WS2811, 121, RGB>(leds, NUM_LEDS_PER_STRIP*21, NUM_LEDS_PER_STRIP);	
+	FastLED.addLeds<WS2811, 122, RGB>(leds, NUM_LEDS_PER_STRIP*22, NUM_LEDS_PER_STRIP);	
 
 }
 
@@ -101,37 +91,23 @@ void setup()
 // ****************************************************************************
 void loop() 
 {
+	taskManager.runLoop();
+
 	if ( millis()-timePrev >= 1000 )		// Repeats every 1sec
 	{
-		timePrev = millis();				// Reset time
+		timePrev = millis();				// Reset timeDelay
 		ledState = !ledState;				// Toggle LED on/off
-		digitalWrite(LED_BUILTIN, ledState);	
-
-		// // Turn on all 50 leds
-		// for (uint8_t i=0; i<RGB_NUM; i++)
-		// {
-		// 	leds[i] = CRGB::Yellow;
-		//  	FastLED.setBrightness(28);		
-	 	// 	FastLED.show();			
-		// }
+		multiIo.digitalWrite(LED_BUILTIN, ledState);
 	}
 
-	// This turns on multiple colors
-	// if ( millis()-time10 >= 100 )			// Repeats every 100ms
-	// {
-	// 	time10 = millis();					// Reset time
+	if ( millis()-timeDelay >= 100 )			// Repeats every 100ms
+	{
+		timeDelay = millis();					// Reset timeDelay
 
-	// 	leds[counter+0] = CRGB::Black;
-	// 	leds[counter+1] = CRGB::Blue;
-	// 	leds[counter+2] = CRGB::Yellow;
-	// 	leds[counter+3] = CRGB::Red;
-	// 	leds[counter+4] = CRGB::Green;		
-	// 	FastLED.setBrightness(28);		
-	// 	FastLED.show();
-
-	// 	counter = counter + 1;
-	// 	if ( counter >= 50 )
-	// 		counter = 0;
-	// }
+		leds[counter+0] = CRGB::Black;
+		leds[counter+1] = CRGB::Red;
+		FastLED.setBrightness(28);			
+		FastLED.show();
+	}
 
 }
