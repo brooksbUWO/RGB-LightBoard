@@ -28,8 +28,8 @@ uint16_t counter = 0;						// Counter
 #include <FastLED.h>
 #define NUM_STRIPS 7
 #define NUM_LEDS_PER_STRIP 150
-// Strip #7 will only have 24 leds
 // Matrix has 22 rows and 42 columns or 924 Leds
+// Strip #7 will only have 24 leds
 // NUM_STRIPS * NUM_LEDS_PER_STRIP = 1050 - 126 = 924
 #define NUM_LEDS ( (NUM_LEDS_PER_STRIP * NUM_STRIPS) - 126)
 CRGB leds[NUM_LEDS];
