@@ -355,7 +355,7 @@ private:
     ESP32RMTController mRMTController;
 
     // -- Verify that the pin is valid
-//    static_assert(FastPin<DATA_PIN>::validpin(), "Invalid pin specified");
+    static_assert(FastPin<DATA_PIN>::validpin(), "Invalid pin specified");
 
 public:
 

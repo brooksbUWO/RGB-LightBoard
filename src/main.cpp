@@ -24,52 +24,63 @@ unsigned long timeDelay = millis();			// Non-Blocking timing delay
 uint8_t ledState = LOW;						// State of LED
 uint16_t counter = 0;						// Counter
 
+// FastLed library
 // https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples#one-array-many-strips
 #include <FastLED.h>
 #define NUM_STRIPS 7
-#define NUM_LEDS_PER_STRIP 150
-// Matrix has 22 rows and 42 columns or 924 Leds
-// Strip #7 will only have 24 leds
-// NUM_STRIPS * NUM_LEDS_PER_STRIP = 1050 - 126 = 924
-#define NUM_LEDS ( (NUM_LEDS_PER_STRIP * NUM_STRIPS) - 126)
+#define NUM_LEDS_PER_STRIP 50
+#define NUM_LEDS 950
+//#define NUM_LEDS ( (NUM_LEDS_PER_STRIP * NUM_STRIPS) - 126)
 CRGB leds[NUM_LEDS];
 
-// https://www.thecoderscorner.com/products/arduino-downloads/io-abstraction/
-// https://www.thecoderscorner.com/products/arduino-libraries/io-abstraction/arduino-pins-and-io-expanders-same-time/
-#include <IoAbstraction.h>
-#include <IoAbstractionWire.h>
-#include <TaskManagerIO.h>
+// LCD hd44780
+// https://reference.arduino.cc/reference/en/libraries/hd44780/
 #include <Wire.h>
-MultiIoAbstraction multiIo(100);			// Allocate 100 pins to arduino pins
-PCF8574IoAbstraction expander1(0x20, IO_PIN_NOT_DEFINED);
+#include <hd44780.h>						// Main hd44780 header
+#include <hd44780ioClass/hd44780_I2Cexp.h>	// I2C expander I/O class header
+hd44780_I2Cexp lcd;							// LCD object config expander chip
+const int LCD_COLS = 20;					// LCD columns
+const int LCD_ROWS = 4;						// LCD rows
+
+
+// Functions
+// ****************************************************************************
+void initLCD()
+{
+	int status;
+	// initialize LCD with number of columns and rows:
+	// hd44780 returns a status from begin() that can be used
+	// to determine if initalization failed.
+	// the actual status codes are defined in <hd44780.h>
+	// See the values RV_XXXX
+	//
+	// looking at the return status from begin() is optional
+	// it is being done here to provide feedback should there be an issue
+	//
+	// note:
+	//	begin() will automatically turn on the backlight
+	//
+	status = lcd.begin(LCD_COLS, LCD_ROWS);
+	if(status) // non zero status means it was unsuccesful
+	{
+		// hd44780 has a fatalError() routine that blinks an led if possible
+		// begin() failed so blink error code using the onboard LED if possible
+		hd44780::fatalError(status); // does not return
+	}
+}
 
 // Begin Code
 // ****************************************************************************
 void setup() 
 {
 	Serial.begin(115200);					// Serial monitor baud rate 115200
-	multiIo.pinMode(LED_BUILTIN, OUTPUT);	// Set pin to function as an OUTPUT
+	Serial.println();
 
-	Wire.begin();
-	multiIo.addIoExpander(&expander1, 16);	// Add 8575 with 16 pins (100-115)
-	// multiIo.addIoDevice(expander1, 16);		// Add 8575 with 16 pins (100-115)
+	pinMode(LED_BUILTIN, OUTPUT);	// Set pin to function as an OUTPUT
 
-	for(int i=100; i<132; i++)
-	{
-		multiIo.pinMode(i, OUTPUT);			// Set pin to function as an OUTPUT
-	}
+	FastLED.addLeds<WS2811, 4, RGB>(leds, 0, NUM_LEDS);
 
-	// Pin abstraction needs line 358 in clockless_rmt_esp32.h commented out
-	// Expander1 pin P0 abstracted to pin 100, starting at index 0 in led array
-	FastLED.addLeds<WS2811, 100, RGB>(leds, 0, NUM_LEDS_PER_STRIP);
-	// Expander1 pin P1 abstracted to pin 101, starting at index 150 in led array
-	FastLED.addLeds<WS2811, 101, RGB>(leds, NUM_LEDS_PER_STRIP*1, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, 102, RGB>(leds, NUM_LEDS_PER_STRIP*2, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, 103, RGB>(leds, NUM_LEDS_PER_STRIP*3, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, 104, RGB>(leds, NUM_LEDS_PER_STRIP*4, NUM_LEDS_PER_STRIP);
-	FastLED.addLeds<WS2811, 105, RGB>(leds, NUM_LEDS_PER_STRIP*5, NUM_LEDS_PER_STRIP);
-	// The last strip only has 24 leds
-	FastLED.addLeds<WS2811, 106, RGB>(leds, NUM_LEDS_PER_STRIP*6, 24);
+	initLCD();
 }
 
 
@@ -77,27 +88,40 @@ void setup()
 // ****************************************************************************
 void loop() 
 {
-	taskManager.runLoop();					// Required for IoAbstraction
+//	taskManager.runLoop();					// Required for IoAbstraction
 
 	if ( millis()-timePrev >= 1000 )		// Repeats every 1sec
 	{
 		timePrev = millis();				// Reset time delay
 		ledState = !ledState;				// Toggle LED on/off
-		multiIo.digitalWrite(LED_BUILTIN, ledState);
+		digitalWrite(LED_BUILTIN, ledState);
+
+		lcd.setCursor(0,0);
+		lcd.print("This is LCD Test");
+		lcd.setCursor(0,1);
+		lcd.print("millis=");
+		lcd.print(String(millis()));
+		lcd.setCursor(0,2);
+		lcd.print("timePrev=");
+		lcd.print(String(timePrev));
+
 	}
 
 	if ( millis()-timeDelay >= 50 )			// Repeats every 50ms
 	{
 		timeDelay = millis();				// Reset time delay
 
-		leds[counter] = CRGB::Black;
-		leds[counter+1] = CRGB::Red;
+		leds[counter] = CRGB::Red;
 		FastLED.setBrightness(28);			
 		FastLED.show();
 
 		counter = counter + 1;
 		if ( counter >= (NUM_LEDS) )
-			counter = 0;		
+			counter = 0;
+
+		lcd.setCursor(0,3);
+		lcd.print("Led Counter=");
+		lcd.print(String(counter));
 	}
 
 
