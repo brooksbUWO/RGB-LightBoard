@@ -88,7 +88,6 @@ void setup()
 // ****************************************************************************
 void loop() 
 {
-//	taskManager.runLoop();					// Required for IoAbstraction
 
 	if ( millis()-timePrev >= 1000 )		// Repeats every 1sec
 	{
@@ -98,13 +97,9 @@ void loop()
 
 		lcd.setCursor(0,0);
 		lcd.print("This is LCD Test");
-		lcd.setCursor(0,1);
-		lcd.print("millis=");
-		lcd.print(String(millis()));
 		lcd.setCursor(0,2);
 		lcd.print("timePrev=");
 		lcd.print(String(timePrev));
-
 	}
 
 	if ( millis()-timeDelay >= 50 )			// Repeats every 50ms
@@ -118,6 +113,10 @@ void loop()
 		counter = counter + 1;
 		if ( counter >= (NUM_LEDS) )
 			counter = 0;
+
+		lcd.setCursor(0,1);
+		lcd.print("millis=");
+		lcd.print(String(millis()));
 
 		lcd.setCursor(0,3);
 		lcd.print("Led Counter=");
