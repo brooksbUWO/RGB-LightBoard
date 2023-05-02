@@ -4,7 +4,7 @@
 // Revision		: 1.0
 // Target MCU	: Espressif ESP32 (Doit DevKit Version 1)
 //
-//  Program for the Engineering Club using io abstraction, FastLed library,
+//  Program for the Engineering Club using FastLed library
 //  and LED matrix control.
 //
 // Revision History:
@@ -19,19 +19,17 @@
 // Include Files
 // ****************************************************************************
 #include <Arduino.h>
-unsigned long timePrev = millis();			// Non-Blocking LED heartbeat
-unsigned long timeDelay = millis();			// Non-Blocking timing delay
-uint8_t ledState = LOW;						// State of LED
-uint16_t counter = 0;						// Counter
+#include <main.h>
 
-// FastLed library
-// https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples#one-array-many-strips
-#include <FastLED.h>
-#define NUM_STRIPS 7
-#define NUM_LEDS_PER_STRIP 50
-#define NUM_LEDS 950
-//#define NUM_LEDS ( (NUM_LEDS_PER_STRIP * NUM_STRIPS) - 126)
-CRGB leds[NUM_LEDS];
+unsigned long timePrev = millis();			// Non-Blocking LED heartbeat
+uint8_t ledState = LOW;						// State of LED
+
+unsigned long timeDelay1 = millis();		// Non-Blocking timing delay
+bool flagRun1 = false;						// Flag for time period
+unsigned long timeDelay2 = millis();		// Non-Blocking timing delay
+bool flagRun2 = false;						// Flag for time period
+unsigned long timeDelay3 = millis();		// Non-Blocking timing delay
+bool flagRun3 = false;						// Flag for time period
 
 // LCD hd44780
 // https://reference.arduino.cc/reference/en/libraries/hd44780/
@@ -42,24 +40,67 @@ hd44780_I2Cexp lcd;							// LCD object config expander chip
 const int LCD_COLS = 20;					// LCD columns
 const int LCD_ROWS = 4;						// LCD rows
 
+// FastLed library
+// https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples#one-array-many-strips
+#include <FastLED.h>
+#define NUM_LEDS 	924
+#define DATA_PIN 	4						// RGB led data pin
+#define COLOR_ORDER RGB						// RGB led color order
+#define CHIPSET 	WS2811					// RGB led type
+CRGB leds[NUM_LEDS];
+
+// RGB Matrix, Text & Sprite libraries
+// https://github.com/AaronLiddiment/RGBLEDS
+// https://github.com/AaronLiddiment/LEDText/wiki/1.Setting-Up
+#include <LEDMatrix.h>
+#include <LEDText.h>
+#include <FontMatrise.h>
+#include <Font12x16.h>
+#include <FontRobotron.h>
+#include <FontP16x16.h>
+#include <FontCourier8x12.h>
+#include <FontCourierNew7x11.h>
+#define MATRIX_WIDTH   42
+#define MATRIX_HEIGHT  -22
+#define MATRIX_TYPE    HORIZONTAL_ZIGZAG_MATRIX
+
+// Instantiate an instance of the cLEDMatrix class
+cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> matrix;
+cLEDText display1;						// Declare cLEDText class variable
+cLEDText display2;						// Declare cLEDText class variable
+uint8_t hue = 0;
+int16_t counter = 0;
+
+// Various things to display on the RGB matrix
+const unsigned char TxtDemo[] = { EFFECT_SCROLL_LEFT "            LEFT SCROLL "
+                                  EFFECT_SCROLL_RIGHT "            LLORCS THGIR"
+                                  EFFECT_SCROLL_DOWN "            SCROLL DOWN             SCROLL DOWN            " EFFECT_FRAME_RATE "\x04" " SCROLL DOWN            " EFFECT_FRAME_RATE "\x00" " "
+                                  EFFECT_SCROLL_UP "             SCROLL UP               SCROLL UP             " EFFECT_FRAME_RATE "\x04" "  SCROLL UP             " EFFECT_FRAME_RATE "\x00" " "
+                                  EFFECT_CHAR_UP EFFECT_SCROLL_LEFT "            UP"
+                                  EFFECT_CHAR_RIGHT "  RIGHT"
+                                  EFFECT_CHAR_DOWN "  DOWN"
+                                  EFFECT_CHAR_LEFT "  LEFT"
+                                  EFFECT_HSV_CV "\x00\xff\xff\x40\xff\xff" EFFECT_CHAR_UP "           HSV_CV 00-40"
+                                  EFFECT_HSV_CH "\x00\xff\xff\x40\xff\xff" "    HSV_CH 00-40"
+                                  EFFECT_HSV_AV "\x00\xff\xff\x40\xff\xff" "    HSV_AV 00-40"
+                                  EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "    HSV_AH 00-FF"
+                                  "           " EFFECT_HSV "\x00\xff\xff" "R" EFFECT_HSV "\x20\xff\xff" "A" EFFECT_HSV "\x40\xff\xff" "I" EFFECT_HSV "\x60\xff\xff" "N" EFFECT_HSV "\xe0\xff\xff" "B" EFFECT_HSV "\xc0\xff\xff" "O"
+                                  EFFECT_HSV "\xa0\xff\xff" "W" EFFECT_HSV "\x80\xff\xff" "S " EFFECT_DELAY_FRAMES "\x00\x96" EFFECT_RGB "\xff\xff\xff" };
+
+
+const unsigned char displayMe[] = {
+	EFFECT_FRAME_RATE "\x04" EFFECT_SCROLL_UP "UWO"
+	EFFECT_FRAME_RATE "\x04" EFFECT_SCROLL_DOWN "UWO"
+	EFFECT_FRAME_RATE "\x04" EFFECT_SCROLL_LEFT "UWO"
+	EFFECT_DELAY_FRAMES "\x00\x96"
+};
+
 
 // Functions
 // ****************************************************************************
 void initLCD()
 {
 	int status;
-	// initialize LCD with number of columns and rows:
-	// hd44780 returns a status from begin() that can be used
-	// to determine if initalization failed.
-	// the actual status codes are defined in <hd44780.h>
-	// See the values RV_XXXX
-	//
-	// looking at the return status from begin() is optional
-	// it is being done here to provide feedback should there be an issue
-	//
-	// note:
-	//	begin() will automatically turn on the backlight
-	//
 	status = lcd.begin(LCD_COLS, LCD_ROWS);
 	if(status) // non zero status means it was unsuccesful
 	{
@@ -76,15 +117,36 @@ void setup()
 	Serial.begin(115200);					// Serial monitor baud rate 115200
 	Serial.println();
 
-	pinMode(LED_BUILTIN, OUTPUT);	// Set pin to function as an OUTPUT
+	initLCD();								// Initialize LCD display
+	pinMode(LED_BUILTIN, OUTPUT);			// Set pin function as an OUTPUT
 
-	FastLED.addLeds<WS2811, 4, RGB>(leds, 0, NUM_LEDS);
+	FastLED.addLeds<CHIPSET, DATA_PIN, COLOR_ORDER>(matrix[0], matrix.Size());
+	// Test matrix on start-up by displaying some colors
+  	FastLED.setBrightness(255);	
+	FastLED.clear(true);
+	FastLED.showColor(CRGB::Red);
+	delay(500);
+	FastLED.showColor(CRGB::Lime);
+	delay(500);
+	FastLED.showColor(CRGB::Blue);
+	delay(500);
+	FastLED.showColor(CRGB::White);
+	delay(500);
+  	FastLED.clear(true);
 
-	initLCD();
+	//display.SetFont(MatriseFontData);
+	//display.SetFont(RobotronFontData);
+	//display.SetFont(FontP16x16Data);
+	//display.SetFont(Font12x16Data);
+	//display.SetFont(FontCourier8x12Data);
+	display1.SetFont(FontCourierNew7x11Data);
+	display1.Init(&matrix, matrix.Width(), display1.FontHeight() + 1, 0, 0);
+	display1.SetText((unsigned char *)displayMe, sizeof(displayMe) - 1);	
+	display1.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0xff, 0x00);	// yellow
 }
 
 
-// Main program
+// Main program (example display text)
 // ****************************************************************************
 void loop() 
 {
@@ -96,32 +158,108 @@ void loop()
 		digitalWrite(LED_BUILTIN, ledState);
 
 		lcd.setCursor(0,0);
-		lcd.print("This is LCD Test");
-		lcd.setCursor(0,2);
-		lcd.print("timePrev=");
-		lcd.print(String(timePrev));
-	}
-
-	if ( millis()-timeDelay >= 50 )			// Repeats every 50ms
-	{
-		timeDelay = millis();				// Reset time delay
-
-		leds[counter] = CRGB::Red;
-		FastLED.setBrightness(28);			
-		FastLED.show();
-
-		counter = counter + 1;
-		if ( counter >= (NUM_LEDS) )
-			counter = 0;
-
+		lcd.print("UWO Lightboard");
 		lcd.setCursor(0,1);
-		lcd.print("millis=");
-		lcd.print(String(millis()));
-
-		lcd.setCursor(0,3);
-		lcd.print("Led Counter=");
-		lcd.print(String(counter));
+		lcd.print("TimePrev=");
+		lcd.print(String(timePrev));
+		lcd.print("ms");
 	}
 
+	if ( (display1.UpdateText() == -1) && flagRun1 ) //(millis()-timeDelay1 >= 10000 ) ) //&& flagRun1 )
+	{
+		display1.SetText((unsigned char *)displayMe, sizeof(displayMe) - 1);
+	}
+	else if ( millis()-timeDelay1 >= 20000 )
+	{
+		flagRun1 = false;
+		flagRun2 = true;
+		timeDelay2 = millis();
+		FastLED.clear(true);
+		display2.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0x00, 0xff);
+		display2.SetText((unsigned char *)TxtDemo, sizeof(TxtDemo) - 1);		
+	}
 
+	if ( (display2.UpdateText() == -1) && flagRun2)
+	{
+		display2.SetText((unsigned char *)TxtDemo, sizeof(TxtDemo) - 1); 
+	}
+	else if (millis()-timeDelay2 >= 20000 )
+	{
+		flagRun2 = false;
+		flagRun3 = true;
+		timeDelay3 = millis();
+	}
+	
+	if ( flagRun3 && (millis()-timeDelay3 <= 60000 ) )
+	{
+		drawStuff();
+	}
+	else 
+	{
+		flagRun3 = false;
+		flagRun1 = true;
+		timeDelay1 = millis();
+		FastLED.clear(true);		
+		display1.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0xff, 0x00);	// yellow
+		display1.SetText((unsigned char *)displayMe, sizeof(displayMe) - 1);		
+	}
+
+}
+
+
+// Draw shapes and stuff
+// ****************************************************************************
+void drawStuff() 
+{
+  int16_t sx, sy, x, y;
+  uint8_t h;
+
+  FastLED.clear();
+  
+  h = hue;
+  if (counter < 1125)
+  {
+    // ** Fill LED's with diagonal stripes
+    for (x=0; x<(matrix.Width()+matrix.Height()); ++x)
+    {
+      matrix.DrawLine(x - matrix.Height(), matrix.Height() - 1, x, 0, CHSV(h, 255, 255));
+      h+=16;
+    }
+  }
+  else
+  {
+    // ** Fill LED's with horizontal stripes
+    for (y=0; y<matrix.Height(); ++y)
+    {
+      matrix.DrawLine(0, y, matrix.Width() - 1, y, CHSV(h, 255, 255));
+      h+=16;
+    }
+  }
+  hue+=4;
+
+  if (counter < 125)
+    ;
+  else if (counter < 375)
+    matrix.HorizontalMirror();
+  else if (counter < 625)
+    matrix.VerticalMirror();
+  else if (counter < 875)
+    matrix.QuadrantMirror();
+  else if (counter < 1125)
+    matrix.QuadrantRotateMirror();
+  else if (counter < 1250)
+    ;
+  else if (counter < 1500)
+    matrix.TriangleTopMirror();
+  else if (counter < 1750)
+    matrix.TriangleBottomMirror();
+  else if (counter < 2000)
+    matrix.QuadrantTopTriangleMirror();
+  else if (counter < 2250)
+    matrix.QuadrantBottomTriangleMirror();
+
+  counter++;
+  if (counter >= 2250)
+    counter = 0;
+  FastLED.show();
 }
