@@ -20,6 +20,7 @@
 // ****************************************************************************
 #include <Arduino.h>
 #include <main.h>
+//#define DEBUG
 
 unsigned long timePrev = millis();			// Non-Blocking LED heartbeat
 uint8_t ledState = LOW;						// State of LED
@@ -111,6 +112,35 @@ void initLCD()
 	}
 }
 
+void reboot()
+{
+	unsigned long rebootMillis = millis();		// Count down for rebooting
+	unsigned long rebootCountMillis = millis();	// 1s counter for GUI
+	uint16_t rebootTime = 10000;				// Reboot time in msec
+	uint16_t rebootCountDown = rebootTime/1000;	// Reboot count down in sec
+
+	Serial.printf("Restarting in %d seconds \r\n", rebootTime/1000);
+	for (;;)
+	{
+		if ( (millis() - rebootMillis > rebootTime) )
+		{
+			Serial.printf("....Restarting \r\n");
+			ESP.restart();
+		}
+		else if ( (millis() - rebootCountMillis >= 1000) )
+		{
+			rebootCountMillis = millis();
+			rebootCountDown = rebootCountDown - 1;
+			for(int i=rebootCountDown; i>0; i--)
+			{
+				Serial.print(".");
+			}
+			Serial.printf("%d \r\n", rebootCountDown);
+		}
+	}
+}
+
+
 // Begin Code
 // ****************************************************************************
 void setup() 
@@ -125,15 +155,17 @@ void setup()
 	// Test matrix on start-up by displaying some colors
   	FastLED.setBrightness(255);	
 	FastLED.clear(true);
+#ifdef DEBUG
 	FastLED.showColor(CRGB::Red);
-	delay(500);
+	delay(1000);
 	FastLED.showColor(CRGB::Lime);
-	delay(500);
+	delay(1000);
 	FastLED.showColor(CRGB::Blue);
-	delay(500);
+	delay(1000);
 	FastLED.showColor(CRGB::White);
-	delay(500);
+	delay(1000);
   	FastLED.clear(true);
+#endif
 	FastLED.show();
 
 	display.SetFont(FontCourierNew7x11Data);
@@ -175,6 +207,9 @@ void loop()
 	}
 	else
 		FastLED.show();
+	
+	if ( millis()-time2 >= timeDelay2 )
+		reboot();
 
 }
 
