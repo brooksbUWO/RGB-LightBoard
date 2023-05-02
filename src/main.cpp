@@ -24,11 +24,16 @@
 unsigned long timePrev = millis();			// Non-Blocking LED heartbeat
 uint8_t ledState = LOW;						// State of LED
 
-unsigned long timeDelay1 = millis();		// Non-Blocking timing delay
+unsigned long time1 = millis();				// Non-Blocking timing delay
+unsigned long timeDelay1 = 70000;			// Time in milliseconds
 bool flagRun1 = false;						// Flag for time period
-unsigned long timeDelay2 = millis();		// Non-Blocking timing delay
+
+unsigned long time2 = millis();				// Non-Blocking timing delay
+unsigned long timeDelay2 = timeDelay1*2;	// Time in milliseconds
 bool flagRun2 = false;						// Flag for time period
-unsigned long timeDelay3 = millis();		// Non-Blocking timing delay
+
+unsigned long time3 = millis();				// Non-Blocking timing delay
+unsigned long timeDelay3 = timeDelay2*2;	// Time in milliseconds
 bool flagRun3 = false;						// Flag for time period
 
 // LCD hd44780
@@ -54,38 +59,34 @@ CRGB leds[NUM_LEDS];
 // https://github.com/AaronLiddiment/LEDText/wiki/1.Setting-Up
 #include <LEDMatrix.h>
 #include <LEDText.h>
-#include <FontMatrise.h>
-#include <Font12x16.h>
-#include <FontRobotron.h>
-#include <FontP16x16.h>
-#include <FontCourier8x12.h>
 #include <FontCourierNew7x11.h>
 #define MATRIX_WIDTH   42
 #define MATRIX_HEIGHT  -22
 #define MATRIX_TYPE    HORIZONTAL_ZIGZAG_MATRIX
-
 // Instantiate an instance of the cLEDMatrix class
 cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> matrix;
-cLEDText display1;						// Declare cLEDText class variable
-cLEDText display2;						// Declare cLEDText class variable
+cLEDText display;						// Declare cLEDText class variable
+
 uint8_t hue = 0;
 int16_t counter = 0;
 
 // Various things to display on the RGB matrix
-const unsigned char TxtDemo[] = { EFFECT_SCROLL_LEFT "            LEFT SCROLL "
-                                  EFFECT_SCROLL_RIGHT "            LLORCS THGIR"
-                                  EFFECT_SCROLL_DOWN "            SCROLL DOWN             SCROLL DOWN            " EFFECT_FRAME_RATE "\x04" " SCROLL DOWN            " EFFECT_FRAME_RATE "\x00" " "
-                                  EFFECT_SCROLL_UP "             SCROLL UP               SCROLL UP             " EFFECT_FRAME_RATE "\x04" "  SCROLL UP             " EFFECT_FRAME_RATE "\x00" " "
-                                  EFFECT_CHAR_UP EFFECT_SCROLL_LEFT "            UP"
-                                  EFFECT_CHAR_RIGHT "  RIGHT"
-                                  EFFECT_CHAR_DOWN "  DOWN"
-                                  EFFECT_CHAR_LEFT "  LEFT"
-                                  EFFECT_HSV_CV "\x00\xff\xff\x40\xff\xff" EFFECT_CHAR_UP "           HSV_CV 00-40"
-                                  EFFECT_HSV_CH "\x00\xff\xff\x40\xff\xff" "    HSV_CH 00-40"
-                                  EFFECT_HSV_AV "\x00\xff\xff\x40\xff\xff" "    HSV_AV 00-40"
-                                  EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "    HSV_AH 00-FF"
-                                  "           " EFFECT_HSV "\x00\xff\xff" "R" EFFECT_HSV "\x20\xff\xff" "A" EFFECT_HSV "\x40\xff\xff" "I" EFFECT_HSV "\x60\xff\xff" "N" EFFECT_HSV "\xe0\xff\xff" "B" EFFECT_HSV "\xc0\xff\xff" "O"
-                                  EFFECT_HSV "\xa0\xff\xff" "W" EFFECT_HSV "\x80\xff\xff" "S " EFFECT_DELAY_FRAMES "\x00\x96" EFFECT_RGB "\xff\xff\xff" };
+const unsigned char TxtDemo[] = { 
+	EFFECT_SCROLL_LEFT "            LEFT SCROLL "
+    EFFECT_SCROLL_RIGHT "            LLORCS THGIR"
+	EFFECT_SCROLL_DOWN "            SCROLL DOWN             SCROLL DOWN            " EFFECT_FRAME_RATE "\x04" " SCROLL DOWN            " EFFECT_FRAME_RATE "\x00" " "
+	EFFECT_SCROLL_UP "             SCROLL UP               SCROLL UP             " EFFECT_FRAME_RATE "\x04" "  SCROLL UP             " EFFECT_FRAME_RATE "\x00" " "
+	EFFECT_CHAR_UP EFFECT_SCROLL_LEFT "            UP"
+	EFFECT_CHAR_RIGHT "  RIGHT"
+	EFFECT_CHAR_DOWN "  DOWN"
+	EFFECT_CHAR_LEFT "  LEFT"
+	EFFECT_HSV_CV "\x00\xff\xff\x40\xff\xff" EFFECT_CHAR_UP "           HSV_CV 00-40"
+	EFFECT_HSV_CH "\x00\xff\xff\x40\xff\xff" "    HSV_CH 00-40"
+	EFFECT_HSV_AV "\x00\xff\xff\x40\xff\xff" "    HSV_AV 00-40"
+	EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "    HSV_AH 00-FF"
+	"           " EFFECT_HSV "\x00\xff\xff" "R" EFFECT_HSV "\x20\xff\xff" "A" EFFECT_HSV "\x40\xff\xff" "I" EFFECT_HSV "\x60\xff\xff" "N" EFFECT_HSV "\xe0\xff\xff" "B" EFFECT_HSV "\xc0\xff\xff" "O"
+	EFFECT_HSV "\xa0\xff\xff" "W" EFFECT_HSV "\x80\xff\xff" "S " EFFECT_DELAY_FRAMES "\x00\x96" EFFECT_RGB "\xff\xff\xff" 
+};
 
 
 const unsigned char displayMe[] = {
@@ -133,16 +134,16 @@ void setup()
 	FastLED.showColor(CRGB::White);
 	delay(500);
   	FastLED.clear(true);
+	FastLED.show();
 
-	//display.SetFont(MatriseFontData);
-	//display.SetFont(RobotronFontData);
-	//display.SetFont(FontP16x16Data);
-	//display.SetFont(Font12x16Data);
-	//display.SetFont(FontCourier8x12Data);
-	display1.SetFont(FontCourierNew7x11Data);
-	display1.Init(&matrix, matrix.Width(), display1.FontHeight() + 1, 0, 0);
-	display1.SetText((unsigned char *)displayMe, sizeof(displayMe) - 1);	
-	display1.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0xff, 0x00);	// yellow
+	display.SetFont(FontCourierNew7x11Data);
+	display.Init(&matrix, matrix.Width(), display.FontHeight() + 1, 0, 0);
+	display.SetText((unsigned char *)TxtDemo, sizeof(TxtDemo) - 1);
+	//display.SetText((unsigned char *)displayMe, sizeof(displayMe) - 1);
+	display.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0xff, 0x00);	// Yellow
+	
+	time1 = millis();
+	time2 = millis();
 }
 
 
@@ -165,44 +166,15 @@ void loop()
 		lcd.print("ms");
 	}
 
-	if ( (display1.UpdateText() == -1) && flagRun1 ) //(millis()-timeDelay1 >= 10000 ) ) //&& flagRun1 )
-	{
-		display1.SetText((unsigned char *)displayMe, sizeof(displayMe) - 1);
-	}
-	else if ( millis()-timeDelay1 >= 20000 )
-	{
-		flagRun1 = false;
-		flagRun2 = true;
-		timeDelay2 = millis();
-		FastLED.clear(true);
-		display2.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0x00, 0xff);
-		display2.SetText((unsigned char *)TxtDemo, sizeof(TxtDemo) - 1);		
-	}
-
-	if ( (display2.UpdateText() == -1) && flagRun2)
-	{
-		display2.SetText((unsigned char *)TxtDemo, sizeof(TxtDemo) - 1); 
-	}
-	else if (millis()-timeDelay2 >= 20000 )
-	{
-		flagRun2 = false;
-		flagRun3 = true;
-		timeDelay3 = millis();
-	}
-	
-	if ( flagRun3 && (millis()-timeDelay3 <= 60000 ) )
+	if (display.UpdateText() == -1)
+		display.SetText((unsigned char *)TxtDemo, sizeof(TxtDemo) - 1);
+		//display.SetText((unsigned char *)displayMe, sizeof(displayMe) - 1);
+	else if ( (millis()-time1 >= timeDelay1) )
 	{
 		drawStuff();
 	}
-	else 
-	{
-		flagRun3 = false;
-		flagRun1 = true;
-		timeDelay1 = millis();
-		FastLED.clear(true);		
-		display1.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0xff, 0x00);	// yellow
-		display1.SetText((unsigned char *)displayMe, sizeof(displayMe) - 1);		
-	}
+	else
+		FastLED.show();
 
 }
 
