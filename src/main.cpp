@@ -21,20 +21,9 @@
 #include <main.h>
 // #define DEBUG
 
-unsigned long timePrev = millis(); // Non-Blocking LED heartbeat
-uint8_t ledState = LOW;			   // State of LED
-
-unsigned long time1 = millis();	  // Non-Blocking timing delay
-unsigned long timeDelay1 = 70000; // Time in milliseconds
-bool flagRun1 = false;			  // Flag for time period
-
-unsigned long time2 = millis();			   // Non-Blocking timing delay
-unsigned long timeDelay2 = timeDelay1 * 2; // Time in milliseconds
-bool flagRun2 = false;					   // Flag for time period
-
-unsigned long time3 = millis();			   // Non-Blocking timing delay
-unsigned long timeDelay3 = timeDelay2 * 2; // Time in milliseconds
-bool flagRun3 = false;					   // Flag for time period
+unsigned long timePrevious = millis(); // Non-Blocking LED heartbeat
+unsigned long runTime = 0;			   // Run time
+uint8_t ledState = LOW;				   // State of LED
 
 // LCD hd44780
 // https://reference.arduino.cc/reference/en/libraries/hd44780/
@@ -63,12 +52,18 @@ CRGB leds[NUM_LEDS];
 #define MATRIX_WIDTH 42
 #define MATRIX_HEIGHT -22
 #define MATRIX_TYPE HORIZONTAL_ZIGZAG_MATRIX
-cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> matrix; // Instantiate cLEDMatrix class
-cLEDText display;											 // Declare cLEDText class variable
+cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> matrix; // Instantiate matrix variable
+cLEDText display;											 // Instantiate display variable
 uint8_t hue = 0;
 int16_t counter = 0;
 
+// Finite State Machine (FSM)
+// https://github.com/LennartHennigs/SimpleFSM
+#include <SimpleFSM.h> // Include the library
+SimpleFSM fsm;		   // Create an instance of the FSM
+
 // Various things to display on the RGB matrix
+// https://github.com/AaronLiddiment/LEDText/blob/master/examples/TextExample1/TextExample1.ino
 const unsigned char TxtDemo[] = {
 	EFFECT_SCROLL_LEFT "            LEFT SCROLL " EFFECT_SCROLL_RIGHT "            LLORCS THGIR" EFFECT_SCROLL_DOWN "            SCROLL DOWN             SCROLL DOWN            " EFFECT_FRAME_RATE "\x04"
 					   " SCROLL DOWN            " EFFECT_FRAME_RATE "\x00"
@@ -92,11 +87,6 @@ const unsigned char TxtDemo[] = {
 const unsigned char displayMe[] = {
 	EFFECT_FRAME_RATE "\x04" EFFECT_SCROLL_UP "UWO" EFFECT_FRAME_RATE "\x04" EFFECT_SCROLL_DOWN "UWO" EFFECT_FRAME_RATE "\x04" EFFECT_SCROLL_LEFT "UWO" EFFECT_DELAY_FRAMES "\x00\x96"};
 
-// Finite State Machine (FSM)
-// https://github.com/LennartHennigs/SimpleFSM
-#include <SimpleFSM.h> // Include the library
-SimpleFSM fsm;		   // Create an instance of the FSM
-
 // Functions
 // ****************************************************************************
 void initLCD()
@@ -105,20 +95,37 @@ void initLCD()
 	status = lcd.begin(LCD_COLS, LCD_ROWS);
 }
 
-void state1()
+// https://github.com/AaronLiddiment/LEDText/wiki
+void state1Setup()
 {
-	display.SetFont(FontCourierNew7x11Data);
-	display.Init(&matrix, matrix.Width(), display.FontHeight() + 1, 0, 0);
-	display.SetText((unsigned char *)TxtDemo, sizeof(TxtDemo) - 1);
-	display.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0xff, 0x00); // Yellow
+	display.Init(&matrix, matrix.Width(), display.FontHeight() + 1, 0, 0); // https://bit.ly/3IiUXqd
+	display.SetFont(FontCourierNew7x11Data);							   // https://bit.ly/4bvBvUt
+	display.SetText((unsigned char *)TxtDemo, sizeof(TxtDemo) - 1);		   // https://bit.ly/49AS5AC
+	display.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0xff, 0x00);  // https://bit.ly/49clMIp
 }
 
-void state2()
+void state1()
+{
+	if (display.UpdateText() == -1)										// https://bit.ly/49vMn2M
+		display.SetText((unsigned char *)TxtDemo, sizeof(TxtDemo) - 1); // https://bit.ly/49AS5AC
+	else
+		FastLED.show();
+}
+
+void state2Setup()
 {
 	display.SetFont(FontCourierNew7x11Data);
 	display.Init(&matrix, matrix.Width(), display.FontHeight() + 1, 0, 0);
 	display.SetText((unsigned char *)displayMe, sizeof(displayMe) - 1);
 	display.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0xff, 0x00); // Yellow
+}
+
+void state2()
+{
+	if (display.UpdateText() == -1)
+		display.SetText((unsigned char *)displayMe, sizeof(displayMe) - 1);
+	else
+		FastLED.show();
 }
 
 // Draw shapes and stuff on the RGB matrix
@@ -178,8 +185,8 @@ void state3()
 }
 
 State s[] = {
-	State("textDemo", state1),
-	State("displayMe", state2),
+	State("textDemo", state1Setup, state1),
+	State("displayMe", state2Setup, state2),
 	State("drawStuff", state3)};
 
 TimedTransition timedTransitions[] = {
@@ -194,17 +201,17 @@ int num_timed = sizeof(timedTransitions) / sizeof(TimedTransition);
 // ****************************************************************************
 void setup()
 {
-	Serial.begin(115200); // Serial monitor baud rate 115200
-	Serial.println();
-
+	Serial.begin(115200);		  // Serial monitor baud rate 115200
+	Serial.println();			  // Print a blank line to the serial monitor
 	initLCD();					  // Initialize LCD display
 	pinMode(LED_BUILTIN, OUTPUT); // Set pin function as an OUTPUT
 
 	FastLED.addLeds<CHIPSET, DATA_PIN, COLOR_ORDER>(matrix[0], matrix.Size());
-	// Test matrix on start-up by displaying some colors
 	FastLED.setBrightness(255);
 	FastLED.clear(true);
+
 #ifdef DEBUG
+	// Test matrix on start-up by displaying some colors
 	FastLED.showColor(CRGB::Red);
 	delay(1000);
 	FastLED.showColor(CRGB::Lime);
@@ -217,8 +224,8 @@ void setup()
 #endif
 	FastLED.show();
 
-	fsm.add(timedTransitions, num_timed);
-	fsm.setInitialState(&s[0]);
+	fsm.add(timedTransitions, num_timed); // Add timed transitions to the FSM
+	fsm.setInitialState(&s[0]);			  // Set the initial state of the FSM
 }
 
 // Main program (example display text)
@@ -227,17 +234,26 @@ void loop()
 {
 	fsm.run(); // run the FSM
 
-	if (millis() - timePrev >= 1000) // Repeats every 1sec
+	if (millis() - timePrevious >= 1000) // Repeats every 1sec
 	{
-		timePrev = millis();  // Reset time delay
 		ledState = !ledState; // Toggle LED on/off
 		digitalWrite(LED_BUILTIN, ledState);
 
-		lcd.setCursor(0, 0);
-		lcd.print("UWO Lightboard");
-		lcd.setCursor(0, 1);
-		lcd.print("TimePrev=");
-		lcd.print(String(timePrev));
-		lcd.print("ms");
+		lcd.setCursor(0, 0);		 // Set cursor to first column, first row
+		lcd.print("UWO Lightboard"); // Print message to LCD
+		lcd.setCursor(0, 1);		 // Set cursor to first column, second row
+		lcd.print("Run time: ");	 // Print message to LCD
+
+		// Calculate hours, minutes, and seconds
+		int hours = runTime / (1000 * 3600);
+		int minutes = (runTime % (1000 * 3600)) / 1000;
+		int seconds = (runTime % 1000) / 10; // Divide by 10 for milliseconds accuracy
+
+		// Format time string with leading zeros
+		char timeString[9];
+		snprintf(timeString, sizeof(timeString), "%02d:%02d:%02d", hours, minutes, seconds);
+
+		lcd.print(String(timeString)); // Print message to LCD
+		timePrevious = millis();	   // Reset time delay
 	}
 }
