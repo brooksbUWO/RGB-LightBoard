@@ -186,6 +186,7 @@ void state3()
 	FastLED.show();
 }
 
+// Draw flags on the RGB matrix
 // https://github.com/AaronLiddiment/LEDMatrix/blob/master/examples/MatrixExample2/MatrixExample2.ino
 void state4Setup()
 {
@@ -246,10 +247,10 @@ State s[] = {
 	State("drawFlags", state4Setup, state4)};
 
 TimedTransition timedTransitions[] = {
-	TimedTransition(&s[0], &s[1], 60000),
-	TimedTransition(&s[1], &s[2], 60000),
+	TimedTransition(&s[0], &s[1], 1000 * 60 * 1), // 1 minute
+	TimedTransition(&s[1], &s[2], 1000 * 60 * 1), // 1 minute
 	TimedTransition(&s[2], &s[3], 1000 * 60 * 2), // 2 minutes
-	TimedTransition(&s[3], &s[0], 1000 * 60 * 1), // 1 minutes
+	TimedTransition(&s[3], &s[0], 1000 * 60 * 1), // 1 minute
 };
 
 int num_timed = sizeof(timedTransitions) / sizeof(TimedTransition);
