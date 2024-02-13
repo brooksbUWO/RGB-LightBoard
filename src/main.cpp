@@ -37,11 +37,11 @@ const int LCD_ROWS = 4;					   // LCD rows
 // FastLed library
 // https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples#one-array-many-strips
 #include <FastLED.h>
-#define NUM_LEDS 924
+#define NUM_LEDS 924	// Total number of LED's
 #define DATA_PIN 4		// RGB led data pin
 #define COLOR_ORDER RGB // RGB led color order
 #define CHIPSET WS2811	// RGB led type
-CRGB leds[NUM_LEDS];
+CRGB leds[NUM_LEDS];	// Define LED array
 
 // RGB Matrix, Text & Sprite libraries
 // https://github.com/AaronLiddiment/RGBLEDS
@@ -49,13 +49,13 @@ CRGB leds[NUM_LEDS];
 #include <LEDMatrix.h>
 #include <LEDText.h>
 #include <FontCourierNew7x11.h>
-#define MATRIX_WIDTH 42
-#define MATRIX_HEIGHT -22
-#define MATRIX_TYPE HORIZONTAL_ZIGZAG_MATRIX
+#define MATRIX_WIDTH 42										 // Width of the LED matrix
+#define MATRIX_HEIGHT -22									 // Height of the LED matrix
+#define MATRIX_TYPE HORIZONTAL_ZIGZAG_MATRIX				 // Matrix type
 cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> matrix; // Instantiate matrix variable
 cLEDText display;											 // Instantiate display variable
-uint8_t hue = 0;
-int16_t counter = 0;
+uint8_t hue = 0;											 // Hue value
+int16_t counter = 0;										 // Counter
 
 // Finite State Machine (FSM)
 // https://github.com/LennartHennigs/SimpleFSM
