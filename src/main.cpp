@@ -21,7 +21,8 @@
 #include <main.h>
 // #define DEBUG
 
-unsigned long timePrevious = millis(); // Non-Blocking LED heartbeat
+unsigned long timePrevious = millis(); // Time delay for LED heartbeat
+unsigned long previousMillis = 0;	   // Time delay for LED matrix
 uint8_t ledState = LOW;				   // State of LED
 
 // LCD hd44780
@@ -197,14 +198,14 @@ void state4Setup()
 	matrix.DrawLine(0, matrix.Height() - 1, matrix.Width() - 1, 0, CRGB(255, 255, 255));
 	matrix.DrawLine(0, matrix.Height() - 2, matrix.Width() - 1, 1, CRGB(255, 255, 255));
 	FastLED.show();
-	delay(5000);
+	delay(5000); // blocking 5 second delay
 
 	// Japanese Flag
 	matrix.DrawFilledRectangle(0, 0, matrix.Width() - 1, matrix.Height() - 1, CRGB(255, 255, 255));
 	uint16_t r = min((matrix.Width() - 1) / 2, (matrix.Height() - 1) / 2) - 1;
 	matrix.DrawFilledCircle((matrix.Width() - 1) / 2, (matrix.Height() - 1) / 2, r, CRGB(255, 0, 0));
 	FastLED.show();
-	delay(5000);
+	delay(5000); // blocking 5 second delay
 
 	// Norwegian Flag
 	int16_t x = (matrix.Width() / 4);
@@ -222,7 +223,7 @@ void state4Setup()
 	matrix.DrawLine(x + 1, 0, x + 1, matrix.Height() - 1, CRGB(0, 0, 255));
 	matrix.DrawLine(x + 2, 0, x + 2, matrix.Height() - 1, CRGB(0, 0, 255));
 	FastLED.show();
-	delay(5000);
+	delay(5000); // blocking 5 second delay
 	matrix.ShiftLeft();
 }
 
