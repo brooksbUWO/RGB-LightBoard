@@ -56,6 +56,7 @@ cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> matrix; // Instantiate matr
 cLEDText display;											 // Instantiate display variable
 uint8_t hue = 0;											 // Hue value
 int16_t counter = 0;										 // Counter
+uint8_t angle = 0;											 // Angle
 
 // Finite State Machine (FSM)
 // https://github.com/LennartHennigs/SimpleFSM
@@ -114,8 +115,8 @@ void state1()
 
 void state2Setup()
 {
-	display.SetFont(FontCourierNew7x11Data);
 	display.Init(&matrix, matrix.Width(), display.FontHeight() + 1, 0, 0);
+	display.SetFont(FontCourierNew7x11Data);
 	display.SetText((unsigned char *)displayMe, sizeof(displayMe) - 1);
 	display.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0xff, 0xff, 0x00); // Yellow
 }
@@ -129,6 +130,7 @@ void state2()
 }
 
 // Draw shapes and stuff on the RGB matrix
+// https://github.com/AaronLiddiment/LEDMatrix/blob/master/examples/MatrixExample1/MatrixExample1.ino
 void state3()
 {
 	int16_t sx, sy, x, y;
@@ -184,15 +186,70 @@ void state3()
 	FastLED.show();
 }
 
+// https://github.com/AaronLiddiment/LEDMatrix/blob/master/examples/MatrixExample2/MatrixExample2.ino
+void state4Setup()
+{
+	// Scottish Flag
+	matrix.DrawFilledRectangle(0, 0, matrix.Width() - 1, matrix.Height() - 1, CRGB(0, 0, 255));
+	matrix.DrawRectangle(0, 0, matrix.Width() - 1, matrix.Height() - 1, CRGB(255, 255, 255));
+	matrix.DrawLine(0, 0, matrix.Width() - 1, matrix.Height() - 1, CRGB(255, 255, 255));
+	matrix.DrawLine(0, 1, matrix.Width() - 1, matrix.Height() - 2, CRGB(255, 255, 255));
+	matrix.DrawLine(0, matrix.Height() - 1, matrix.Width() - 1, 0, CRGB(255, 255, 255));
+	matrix.DrawLine(0, matrix.Height() - 2, matrix.Width() - 1, 1, CRGB(255, 255, 255));
+	FastLED.show();
+	delay(5000);
+
+	// Japanese Flag
+	matrix.DrawFilledRectangle(0, 0, matrix.Width() - 1, matrix.Height() - 1, CRGB(255, 255, 255));
+	uint16_t r = min((matrix.Width() - 1) / 2, (matrix.Height() - 1) / 2) - 1;
+	matrix.DrawFilledCircle((matrix.Width() - 1) / 2, (matrix.Height() - 1) / 2, r, CRGB(255, 0, 0));
+	FastLED.show();
+	delay(5000);
+
+	// Norwegian Flag
+	int16_t x = (matrix.Width() / 4);
+	int16_t y = (matrix.Height() / 2) - 2;
+	matrix.DrawFilledRectangle(0, 0, x, y, CRGB(255, 255, 255));
+	matrix.DrawFilledRectangle(0, 0, x - 1, y - 1, CRGB(255, 0, 0));
+	matrix.DrawFilledRectangle(x + 3, 0, matrix.Width() - 1, y, CRGB(255, 255, 255));
+	matrix.DrawFilledRectangle(x + 4, 0, matrix.Width() - 1, y - 1, CRGB(255, 0, 0));
+	matrix.DrawFilledRectangle(0, y + 3, x, matrix.Height() - 1, CRGB(255, 255, 255));
+	matrix.DrawFilledRectangle(0, y + 4, x - 1, matrix.Height() - 1, CRGB(255, 0, 0));
+	matrix.DrawFilledRectangle(x + 3, y + 3, matrix.Width() - 1, matrix.Height() - 1, CRGB(255, 255, 255));
+	matrix.DrawFilledRectangle(x + 4, y + 4, matrix.Width() - 1, matrix.Height() - 1, CRGB(255, 0, 0));
+	matrix.DrawLine(0, y + 1, matrix.Width() - 1, y + 1, CRGB(0, 0, 255));
+	matrix.DrawLine(0, y + 2, matrix.Width() - 1, y + 2, CRGB(0, 0, 255));
+	matrix.DrawLine(x + 1, 0, x + 1, matrix.Height() - 1, CRGB(0, 0, 255));
+	matrix.DrawLine(x + 2, 0, x + 2, matrix.Height() - 1, CRGB(0, 0, 255));
+	FastLED.show();
+	delay(5000);
+	matrix.ShiftLeft();
+}
+
+void state4()
+{
+	uint8_t h = sin8(angle);
+	matrix.ShiftLeft();
+	for (int16_t y = matrix.Height() - 1; y >= 0; --y)
+	{
+		matrix(matrix.Width() - 1, y) = CHSV(h, 255, 255);
+		h += 32;
+	}
+	angle += 4;
+	FastLED.show();
+}
+
 State s[] = {
 	State("textDemo", state1Setup, state1),
 	State("displayMe", state2Setup, state2),
-	State("drawStuff", state3)};
+	State("drawStuff", state3),
+	State("drawFlags", state4Setup, state4)};
 
 TimedTransition timedTransitions[] = {
 	TimedTransition(&s[0], &s[1], 60000),
 	TimedTransition(&s[1], &s[2], 60000),
-	TimedTransition(&s[2], &s[0], 60000),
+	TimedTransition(&s[2], &s[3], 1000 * 60 * 2), // 2 minutes
+	TimedTransition(&s[3], &s[0], 1000 * 60 * 1), // 1 minutes
 };
 
 int num_timed = sizeof(timedTransitions) / sizeof(TimedTransition);
