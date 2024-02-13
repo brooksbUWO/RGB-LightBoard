@@ -22,7 +22,6 @@
 // #define DEBUG
 
 unsigned long timePrevious = millis(); // Non-Blocking LED heartbeat
-unsigned long runTime = 0;			   // Run time
 uint8_t ledState = LOW;				   // State of LED
 
 // LCD hd44780
@@ -303,15 +302,14 @@ void loop()
 		lcd.print("Run time: ");	 // Print message to LCD
 
 		// Calculate hours, minutes, and seconds
-		int hours = runTime / (1000 * 3600);
-		int minutes = (runTime % (1000 * 3600)) / 1000;
-		int seconds = (runTime % 1000) / 10; // Divide by 10 for milliseconds accuracy
+		int hours = timePrevious / (1000 * 60 * 60);	 // Divide by 3600 for hours
+		int minutes = (timePrevious / (1000 * 60)) % 60; // Divide by 60 for minutes
+		int seconds = (timePrevious / 1000) % 60;		 // Divide by 60 for seconds
 
-		// Format time string with leading zeros
-		char timeString[9];
-		snprintf(timeString, sizeof(timeString), "%02d:%02d:%02d", hours, minutes, seconds);
-
-		lcd.print(String(timeString)); // Print message to LCD
-		timePrevious = millis();	   // Reset time delay
+		// Format run time string (with leading zeros)
+		char runTime[9];
+		snprintf(runTime, sizeof(runTime), "%02d:%02d:%02d", hours, minutes, seconds);
+		lcd.print(String(runTime)); // Print message to LCD
+		timePrevious = millis();	// Reset time delay
 	}
 }
